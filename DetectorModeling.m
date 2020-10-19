@@ -5,6 +5,7 @@
 
 %% Task 1
 clear
+close all
 
 % Given Variables
 L = 1024; % Saturation level
@@ -80,7 +81,7 @@ noise_read = 0;
 noise_AD = 0;
 
 
-q = [1:200:3001]; % Lambda/ Mean exposure
+q = [1:50:3001]; % Lambda/ Mean exposure
 L = 1024; % Saturation level
 l_norm = (1 - F1(L, q)); % count
 
@@ -88,19 +89,33 @@ diameter = [20,10,5]; %Square Pixel diameter microns
 area = diameter.^2; %microns^2
 multiplier = area(1) ./ area;
 
-E(1,:) = q ./ area(1);
-E(2,:) = q ./ area(2);%multiplier(2) .* E(1,:);
-E(3,:) = q ./ area(3);%multiplier(3) .* E(1,:);
+% Calculate E for each area
+E(1,:) = q;
+E(2,:) = multiplier(2) .* E(1,:);
+E(3,:) = multiplier(3) .* E(1,:);
 
-logE = log(E);
+logE = log(E)./2;
 
 Plot3(logE, l_norm,["diameter = 20", "diameter = 10", "diameter = 5"])
 
 %% Task 4
-clear
+
+% Calculate variance for each area
+variance = Variance(L, q);
+variance = [variance; variance; variance];
+variance = variance ./ multiplier';
+
+Plot4_1(l_norm, variance,["diameter = 20", "diameter = 10", "diameter = 5"])
+Plot4_2(logE, variance,["diameter = 20", "diameter = 10", "diameter = 5"])
 
 %% Task 5
-clear
+
+% Calculate DQE for each area
+eta = 1;
+dqe = DQE(L, q, eta, noise_AD, noise_read);
+
+Plot5_1(logE, dqe, ["diameter = 20", "diameter = 10", "diameter = 5"])
+Plot5_2(logE, dqe, l_norm, ["diameter = 20", "diameter = 10", "diameter = 5"])
 
 %% Functions
 
@@ -112,13 +127,13 @@ end
 % Compute f1 (eq 6)
 % Compute f2 (eq 9)
 % Compute f3 (eq 16)
-function f1 = F1(L, q)
+function f1 = F1(L,q)
     f1 = 0;
     for i = 0:L-1
         f1 = f1 + (1/L) * poisscdf(i,q);
     end
 end
-function f2 = F2(L, q)
+function f2 = F2(L,q)
     f2 = (1/L) * poisscdf(L-1,q);
 end
 function f3 = F3(L,q)
@@ -140,15 +155,21 @@ function dqe = DQE(L, q, eta, noise_AD, noise_read)
     % Calculate DQE(q) (Eq 24)
     dqe = DQE_qN .* eta;
 end
+% Variance
+function sig = Variance(L, q)
+    f1 = F1(L,q);
+    f3 = F3(L,q);
+    sig = L^2 .* ((1-f3)-(1-f1).^2);
+end
 
-%Plots
+%% Plots
 function Plot1(q_scaled, dqe)
     figure
     hold on
     plot(q_scaled(1,:), dqe(1,:), '-')
     plot(q_scaled(2,:), dqe(2,:), '--')
     plot(q_scaled(3,:), dqe(3,:), '-.')
-    plot(q_scaled(4,:), dqe(4,:), ':')
+    plot(q_scaled(4,:), dqe(4,:), ':k')
     xlim([0 10000])
     ylim([0 1.2])
     legend('eta = 1', 'eta = 0.5','eta = 0.25','eta = 0.125')
@@ -162,7 +183,7 @@ function Plot2(q_scaled, dqe, leg)
     hold on
     plot(q_scaled, dqe(1,:), '-')
     plot(q_scaled, dqe(2,:), '--')
-    plot(q_scaled, dqe(3,:), ':')
+    plot(q_scaled, dqe(3,:), ':k')
     xlim([0 3000])
     ylim([0 0.6])
     legend(leg(1), leg(2), leg(3))
@@ -176,68 +197,112 @@ function Plot3(q_scaled, LogE, leg)
     hold on
     plot(q_scaled(1,:), LogE, '-')
     plot(q_scaled(2,:), LogE, '--')
-    plot(q_scaled(3,:), LogE, ':')
+    plot(q_scaled(3,:), LogE, ':k')
     xlim([0 5])
     ylim([0 1])
-    legend(leg(1), leg(2), leg(3))
+    legend({leg(1), leg(2), leg(3)},'Location','northwest')
     title('normalized pix val vs log(mean # photons/400 microns^2')
     ylabel('l, normalized')
     xlabel('logE, photons/400 microns^2')
     hold off
 end
-function Plot4_1(q_scaled, variance, leg)
+function Plot4_1(a, b, leg)
     figure
     hold on
-    plot(q_scaled, variance(1,:), '-')
-    plot(q_scaled, variance(2,:), '--')
-    plot(q_scaled, variance(3,:), ':')
-    xlim([0 3000])
-    ylim([0 0.6])
-    legend(leg(1), leg(2), leg(3))
+    plot(a, b(1,:), '-')
+    plot(a, b(2,:), '--')
+    plot(a, b(3,:), ':k')
+    legend({leg(1), leg(2), leg(3)},'Location','northwest')
     title('Variance vs normalized mean count level')
     ylabel('Variance')
     xlabel('normalized mean couint level')
     hold off
 end
-function Plot4_2(q_scaled, variance, leg)
+function Plot4_2(a, b, leg)
     figure
     hold on
-    plot(q_scaled, variance(1,:), '-')
-    plot(q_scaled, variance(2,:), '--')
-    plot(q_scaled, variance(3,:), ':')
-    xlim([0 3000])
-    ylim([0 0.6])
-    legend(leg(1), leg(2), leg(3))
+    plot(a(1,:), b(1,:), '-')
+    plot(a(2,:), b(2,:), '--')
+    plot(a(3,:), b(3,:), ':k')
+    legend({leg(1), leg(2), leg(3)},'Location','northwest')
     title('Variance vs log(mean # photons/400 micron^2)')
     ylabel('Variance')
     xlabel('log E, photons/400 micron^2')
     hold off
 end
-function Plot5_1(q_scaled, dqe, leg)
+function Plot5_1(a, b, leg)
     figure
     hold on
-    plot(q_scaled, dqe(1,:), '-')
-    plot(q_scaled, dqe(2,:), '--')
-    plot(q_scaled, dqe(3,:), ':')
-    xlim([0 3000])
-    ylim([0 0.6])
-    legend(leg(1), leg(2), leg(3))
+    plot(a(1,:), b, '-')
+    plot(a(2,:), b, '--')
+    plot(a(3,:), b, ':k')
+    legend({leg(1), leg(2), leg(3)},'Location','southwest')
     title('DQE vs log(mean # photons / 400 microns^2)')
     ylabel('DQE')
     xlabel('log E, photons/400 micron^2')
     hold off
 end
-function Plot5_2(q_scaled, dqe, leg)
+function Plot5_2(a, b, c, leg)
     figure
     hold on
-    plot(q_scaled, dqe(1,:), '-')
-    plot(q_scaled, dqe(2,:), '--')
-    plot(q_scaled, dqe(3,:), ':')
-    xlim([0 3000])
-    ylim([0 0.6])
-    legend(leg(1), leg(2), leg(3))
-    title('DQE and mean count vs logE')
+    yyaxis left
+    plot(a(1,:), b, '-')
+    ylim([0 2])
     ylabel('DQE')
+    yyaxis right
+    ylabel('normalized count')
+    plot(a(1,:), c, ':')
+    ylim([0 1])
+    legend({leg(1)},'Location','northwest')
+    title('DQE and mean count vs logE')
     xlabel('log E, photons/400 micron^2')
     hold off
+end
+
+function Plot_extra()
+    figure
+    hold on
+    title('Mean pix val vs mean # photons')
+    ylabel('l')
+    xlabel('q, photons')
+    ylim([0 L])
+    xlim([0 1.5*L])
+    plot(q, L*(1-F1(L,q)))
+    hold off
+    xline(L, ':', {'L'});
+
+    figure
+    hold on
+    title('gain vs mean # photons')
+    ylabel('gain')
+    xlabel('q, photons')
+    plot(q, L*F2(L,q))
+    xlim([0 1.5*L])
+    hold off
+    xline(L, ':', {'L'});
+    yline(1);
+
+
+    figure
+    hold on
+    title('Variance vs mean # photons')
+    ylabel('variance')
+    xlabel('q, photons')
+    plot(q, Variance(L, F1(L,q), F3(L,q)))
+    ylim([0 L])
+    xlim([0 1.5*L])
+    hold off
+    xline(L, ':', {'L'});
+
+
+    figure
+    hold on
+    title('DQE vs mean # photons')
+    ylabel('DQE')
+    xlabel('q, photons')
+    plot(q, DQE(L, q, 1, noise_AD, noise_read))
+    xlim([0 1.5*L])
+    hold off
+    xline(L, ':', {'L'});
+    yline(1, ':', {'max dqe'});
 end

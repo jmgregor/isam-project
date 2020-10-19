@@ -1,0 +1,668 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Imaging System Analysis Modeling</title><meta name="generator" content="MATLAB 9.7"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2020-10-18"><meta name="DC.source" content="DetectorModeling.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Imaging System Analysis Modeling</h1><!--introduction--><p>Project: Detector Modeling Author: Jared Gregor (<a href="mailto:jmg2586@rit.edu">jmg2586@rit.edu</a>) Date: Oct 5 2020</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Task 1</a></li><li><a href="#2">Task 2</a></li><li><a href="#3">Task 3</a></li><li><a href="#4">Task 4</a></li><li><a href="#5">Task 5</a></li><li><a href="#6">Functions</a></li><li><a href="#7">Plots</a></li></ul></div><h2 id="1">Task 1</h2><pre class="codeinput">clear
+close <span class="string">all</span>
+
+<span class="comment">% Given Variables</span>
+L = 1024; <span class="comment">% Saturation level</span>
+eta = [1.0, 0.5, 0.25, 0.125];
+q = [1:200:8001]; <span class="comment">% Lambda/ Mean exposure</span>
+q_scaled = [q;q;q;q]; <span class="comment">% Scale q for each eta</span>
+q_scaled = q_scaled ./ eta';
+
+
+noise_read = 0; <span class="comment">% Electrons</span>
+noise_AD = 0;
+
+<span class="comment">% Calculate dqe with 0 noise</span>
+dqe(1,:) = DQE(L, q, eta(1), noise_AD, noise_read);
+dqe(2,:) = DQE(L, q, eta(2), noise_AD, noise_read);
+dqe(3,:) = DQE(L, q, eta(3), noise_AD, noise_read);
+dqe(4,:) = DQE(L, q, eta(4), noise_AD, noise_read);
+
+<span class="comment">% Plot DQE vs q</span>
+Plot1(q_scaled, dqe)
+
+<span class="comment">% Add noise</span>
+noise_read = 10; <span class="comment">% Electrons</span>
+AD = 4; <span class="comment">% bits</span>
+noise_AD = NoiseAD(L, AD);
+
+<span class="comment">% Calculate dqe with constant read and AD noise</span>
+dqe(1,:) = DQE(L, q, eta(1), noise_AD, noise_read);
+dqe(2,:) = DQE(L, q, eta(2), noise_AD, noise_read);
+dqe(3,:) = DQE(L, q, eta(3), noise_AD, noise_read);
+dqe(4,:) = DQE(L, q, eta(4), noise_AD, noise_read);
+
+<span class="comment">% Plot DQE vs q with noise</span>
+Plot1(q_scaled, dqe)
+</pre><img vspace="5" hspace="5" src="DetectorModeling_01.png" alt=""> <h2 id="2">Task 2</h2><pre class="codeinput">clear
+
+<span class="comment">% Given Variables</span>
+L = 1024; <span class="comment">% Saturation level</span>
+eta = 0.5;
+q = [1:200:3001]; <span class="comment">% Lambda/ Mean exposure</span>
+q_scaled = q ./ eta;
+
+<span class="comment">% DQE varying read noise</span>
+noise_read = [1,3,10];
+noise_AD = 0;
+
+<span class="comment">% Calculate DQE varying read noise and 0 AD noise</span>
+dqe(1,:) = DQE(L, q, eta, noise_AD, noise_read(1));
+dqe(2,:) = DQE(L, q, eta, noise_AD, noise_read(2));
+dqe(3,:) = DQE(L, q, eta, noise_AD, noise_read(3));
+
+Plot2(q_scaled, dqe,[<span class="string">"read noise = 1"</span>, <span class="string">"read noise = 3"</span>, <span class="string">"read noise = 10"</span>])
+
+<span class="comment">% DQE varying bit level</span>
+noise_read = 0;
+AD = [2,4,8];
+noise_AD = NoiseAD(L, AD);
+
+<span class="comment">% Calculate DQE varying AD noise and 0 read noise</span>
+dqe(1,:) = DQE(L, q, eta, noise_AD(1), noise_read);
+dqe(2,:) = DQE(L, q, eta, noise_AD(2), noise_read);
+dqe(3,:) = DQE(L, q, eta, noise_AD(3), noise_read);
+
+Plot2(q_scaled, dqe,[<span class="string">"AD noise = 2"</span>, <span class="string">"AD noise = 4"</span>, <span class="string">"AD noise = 8"</span>])
+</pre><img vspace="5" hspace="5" src="DetectorModeling_02.png" alt=""> <h2 id="3">Task 3</h2><pre class="codeinput">clear
+
+<span class="comment">% Given Variables</span>
+noise_read = 0;
+noise_AD = 0;
+
+
+q = [1:50:3001]; <span class="comment">% Lambda/ Mean exposure</span>
+L = 1024; <span class="comment">% Saturation level</span>
+l_norm = (1 - F1(L, q)); <span class="comment">% count</span>
+
+diameter = [20,10,5]; <span class="comment">%Square Pixel diameter microns</span>
+area = diameter.^2; <span class="comment">%microns^2</span>
+multiplier = area(1) ./ area;
+
+<span class="comment">% Calculate E for each area</span>
+E(1,:) = q;<span class="comment">% ./ area(1);</span>
+E(2,:) = multiplier(2) .* E(1,:);
+E(3,:) = multiplier(3) .* E(1,:);
+
+logE = log(E)./2;
+
+Plot3(logE, l_norm,[<span class="string">"diameter = 20"</span>, <span class="string">"diameter = 10"</span>, <span class="string">"diameter = 5"</span>])
+</pre><img vspace="5" hspace="5" src="DetectorModeling_03.png" alt=""> <h2 id="4">Task 4</h2><pre class="codeinput"><span class="comment">% Calculate variance for each area</span>
+variance = Variance(L, q);
+variance = [variance; variance; variance];
+variance = variance ./ multiplier';
+
+Plot4_1(l_norm, variance,[<span class="string">"diameter = 20"</span>, <span class="string">"diameter = 10"</span>, <span class="string">"diameter = 5"</span>])
+Plot4_2(logE, variance,[<span class="string">"diameter = 20"</span>, <span class="string">"diameter = 10"</span>, <span class="string">"diameter = 5"</span>])
+</pre><img vspace="5" hspace="5" src="DetectorModeling_04.png" alt=""> <img vspace="5" hspace="5" src="DetectorModeling_05.png" alt=""> <h2 id="5">Task 5</h2><pre class="codeinput"><span class="comment">% Calculate DQE for each area</span>
+eta = 1;
+dqe = DQE(L, q, eta, noise_AD, noise_read);
+
+Plot5_1(logE, dqe, [<span class="string">"diameter = 20"</span>, <span class="string">"diameter = 10"</span>, <span class="string">"diameter = 5"</span>])
+Plot5_2(logE, dqe, l_norm, [<span class="string">"diameter = 20"</span>, <span class="string">"diameter = 10"</span>, <span class="string">"diameter = 5"</span>])
+</pre><img vspace="5" hspace="5" src="DetectorModeling_06.png" alt=""> <img vspace="5" hspace="5" src="DetectorModeling_07.png" alt=""> <h2 id="6">Functions</h2><pre class="codeinput"><span class="comment">% AD noise</span>
+<span class="keyword">function</span> noise = NoiseAD(L, AD)
+    noise = (L.^2)./(12.*2.^(2.*AD));
+<span class="keyword">end</span>
+
+<span class="comment">% Compute f1 (eq 6)</span>
+<span class="comment">% Compute f2 (eq 9)</span>
+<span class="comment">% Compute f3 (eq 16)</span>
+<span class="keyword">function</span> f1 = F1(L,q)
+    f1 = 0;
+    <span class="keyword">for</span> i = 0:L-1
+        f1 = f1 + (1/L) * poisscdf(i,q);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> f2 = F2(L,q)
+    f2 = (1/L) * poisscdf(L-1,q);
+<span class="keyword">end</span>
+<span class="keyword">function</span> f3 = F3(L,q)
+    f3 = 0;
+    <span class="keyword">for</span> i = 0:L-1
+        f3 = f3 + ((1/(L*L)) * (2*i+1) * poisscdf(i,q));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% DQE</span>
+<span class="keyword">function</span> dqe = DQE(L, q, eta, noise_AD, noise_read)
+    f1 = F1(L,q);
+    f2 = F2(L,q);
+    f3 = F3(L,q);
+
+    <span class="comment">% Calculate DQE(qN) (Eq 21)</span>
+    DQE_qN = (q.*f2.*f2.*L.^2)./(noise_AD + noise_read^2 + L.^2 *((1.-f3)-(1.-f1).^2));
+
+    <span class="comment">% Calculate DQE(q) (Eq 24)</span>
+    dqe = DQE_qN .* eta;
+<span class="keyword">end</span>
+<span class="comment">% Variance</span>
+<span class="keyword">function</span> sig = Variance(L, q)
+    f1 = F1(L,q);
+    f3 = F3(L,q);
+    sig = L^2 .* ((1-f3)-(1-f1).^2);
+<span class="keyword">end</span>
+</pre><h2 id="7">Plots</h2><pre class="codeinput"><span class="keyword">function</span> Plot1(q_scaled, dqe)
+    figure
+    hold <span class="string">on</span>
+    plot(q_scaled(1,:), dqe(1,:), <span class="string">'-'</span>)
+    plot(q_scaled(2,:), dqe(2,:), <span class="string">'--'</span>)
+    plot(q_scaled(3,:), dqe(3,:), <span class="string">'-.'</span>)
+    plot(q_scaled(4,:), dqe(4,:), <span class="string">':k'</span>)
+    xlim([0 10000])
+    ylim([0 1.2])
+    legend(<span class="string">'eta = 1'</span>, <span class="string">'eta = 0.5'</span>,<span class="string">'eta = 0.25'</span>,<span class="string">'eta = 0.125'</span>)
+    title(<span class="string">'DQE vs Mean # q'</span>)
+    ylabel(<span class="string">'DQE'</span>)
+    xlabel(<span class="string">'q, photons'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> Plot2(q_scaled, dqe, leg)
+    figure
+    hold <span class="string">on</span>
+    plot(q_scaled, dqe(1,:), <span class="string">'-'</span>)
+    plot(q_scaled, dqe(2,:), <span class="string">'--'</span>)
+    plot(q_scaled, dqe(3,:), <span class="string">':k'</span>)
+    xlim([0 3000])
+    ylim([0 0.6])
+    legend(leg(1), leg(2), leg(3))
+    title(<span class="string">'DQE vs Mean # q'</span>)
+    ylabel(<span class="string">'DQE'</span>)
+    xlabel(<span class="string">'q, photons'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> Plot3(q_scaled, LogE, leg)
+    figure
+    hold <span class="string">on</span>
+    plot(q_scaled(1,:), LogE, <span class="string">'-'</span>)
+    plot(q_scaled(2,:), LogE, <span class="string">'--'</span>)
+    plot(q_scaled(3,:), LogE, <span class="string">':k'</span>)
+    xlim([0 5])
+    ylim([0 1])
+    legend({leg(1), leg(2), leg(3)},<span class="string">'Location'</span>,<span class="string">'northwest'</span>)
+    title(<span class="string">'normalized pix val vs log(mean # photons/400 microns^2'</span>)
+    ylabel(<span class="string">'l, normalized'</span>)
+    xlabel(<span class="string">'logE, photons/400 microns^2'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> Plot4_1(a, b, leg)
+    figure
+    hold <span class="string">on</span>
+    plot(a, b(1,:), <span class="string">'-'</span>)
+    plot(a, b(2,:), <span class="string">'--'</span>)
+    plot(a, b(3,:), <span class="string">':k'</span>)
+    legend({leg(1), leg(2), leg(3)},<span class="string">'Location'</span>,<span class="string">'northwest'</span>)
+    title(<span class="string">'Variance vs normalized mean count level'</span>)
+    ylabel(<span class="string">'Variance'</span>)
+    xlabel(<span class="string">'normalized mean couint level'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> Plot4_2(a, b, leg)
+    figure
+    hold <span class="string">on</span>
+    plot(a(1,:), b(1,:), <span class="string">'-'</span>)
+    plot(a(2,:), b(2,:), <span class="string">'--'</span>)
+    plot(a(3,:), b(3,:), <span class="string">':k'</span>)
+    legend({leg(1), leg(2), leg(3)},<span class="string">'Location'</span>,<span class="string">'northwest'</span>)
+    title(<span class="string">'Variance vs log(mean # photons/400 micron^2)'</span>)
+    ylabel(<span class="string">'Variance'</span>)
+    xlabel(<span class="string">'log E, photons/400 micron^2'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> Plot5_1(a, b, leg)
+    figure
+    hold <span class="string">on</span>
+    plot(a(1,:), b, <span class="string">'-'</span>)
+    plot(a(2,:), b, <span class="string">'--'</span>)
+    plot(a(3,:), b, <span class="string">':k'</span>)
+    legend({leg(1), leg(2), leg(3)},<span class="string">'Location'</span>,<span class="string">'southwest'</span>)
+    title(<span class="string">'DQE vs log(mean # photons / 400 microns^2)'</span>)
+    ylabel(<span class="string">'DQE'</span>)
+    xlabel(<span class="string">'log E, photons/400 micron^2'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+<span class="keyword">function</span> Plot5_2(a, b, c, leg)
+    figure
+    hold <span class="string">on</span>
+    yyaxis <span class="string">left</span>
+    plot(a(1,:), b, <span class="string">'-'</span>)
+    ylim([0 2])
+    ylabel(<span class="string">'DQE'</span>)
+    yyaxis <span class="string">right</span>
+    ylabel(<span class="string">'normalized count'</span>)
+    plot(a(1,:), c, <span class="string">':'</span>)
+    ylim([0 1])
+    legend({leg(1)},<span class="string">'Location'</span>,<span class="string">'northwest'</span>)
+    title(<span class="string">'DQE and mean count vs logE'</span>)
+    xlabel(<span class="string">'log E, photons/400 micron^2'</span>)
+    hold <span class="string">off</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> Plot_extra()
+    figure
+    hold <span class="string">on</span>
+    title(<span class="string">'Mean pix val vs mean # photons'</span>)
+    ylabel(<span class="string">'l'</span>)
+    xlabel(<span class="string">'q, photons'</span>)
+    ylim([0 L])
+    xlim([0 1.5*L])
+    plot(q, L*(1-F1(L,q)))
+    hold <span class="string">off</span>
+    xline(L, <span class="string">':'</span>, {<span class="string">'L'</span>});
+
+    figure
+    hold <span class="string">on</span>
+    title(<span class="string">'gain vs mean # photons'</span>)
+    ylabel(<span class="string">'gain'</span>)
+    xlabel(<span class="string">'q, photons'</span>)
+    plot(q, L*F2(L,q))
+    xlim([0 1.5*L])
+    hold <span class="string">off</span>
+    xline(L, <span class="string">':'</span>, {<span class="string">'L'</span>});
+    yline(1);
+
+
+    figure
+    hold <span class="string">on</span>
+    title(<span class="string">'Variance vs mean # photons'</span>)
+    ylabel(<span class="string">'variance'</span>)
+    xlabel(<span class="string">'q, photons'</span>)
+    plot(q, Variance(L, F1(L,q), F3(L,q)))
+    ylim([0 L])
+    xlim([0 1.5*L])
+    hold <span class="string">off</span>
+    xline(L, <span class="string">':'</span>, {<span class="string">'L'</span>});
+
+
+    figure
+    hold <span class="string">on</span>
+    title(<span class="string">'DQE vs mean # photons'</span>)
+    ylabel(<span class="string">'DQE'</span>)
+    xlabel(<span class="string">'q, photons'</span>)
+    plot(q, DQE(L, q, 1, noise_AD, noise_read))
+    xlim([0 1.5*L])
+    hold <span class="string">off</span>
+    xline(L, <span class="string">':'</span>, {<span class="string">'L'</span>});
+    yline(1, <span class="string">':'</span>, {<span class="string">'max dqe'</span>});
+<span class="keyword">end</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2019b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Imaging System Analysis Modeling
+% Project: Detector Modeling
+% Author: Jared Gregor (jmg2586@rit.edu)
+% Date: Oct 5 2020
+
+%% Task 1
+clear
+close all
+
+% Given Variables
+L = 1024; % Saturation level
+eta = [1.0, 0.5, 0.25, 0.125];
+q = [1:200:8001]; % Lambda/ Mean exposure
+q_scaled = [q;q;q;q]; % Scale q for each eta
+q_scaled = q_scaled ./ eta';
+
+
+noise_read = 0; % Electrons
+noise_AD = 0; 
+
+% Calculate dqe with 0 noise
+dqe(1,:) = DQE(L, q, eta(1), noise_AD, noise_read);
+dqe(2,:) = DQE(L, q, eta(2), noise_AD, noise_read);
+dqe(3,:) = DQE(L, q, eta(3), noise_AD, noise_read);
+dqe(4,:) = DQE(L, q, eta(4), noise_AD, noise_read);
+
+% Plot DQE vs q
+Plot1(q_scaled, dqe)
+
+% Add noise
+noise_read = 10; % Electrons
+AD = 4; % bits
+noise_AD = NoiseAD(L, AD);
+
+% Calculate dqe with constant read and AD noise
+dqe(1,:) = DQE(L, q, eta(1), noise_AD, noise_read);
+dqe(2,:) = DQE(L, q, eta(2), noise_AD, noise_read);
+dqe(3,:) = DQE(L, q, eta(3), noise_AD, noise_read);
+dqe(4,:) = DQE(L, q, eta(4), noise_AD, noise_read);
+
+% Plot DQE vs q with noise
+Plot1(q_scaled, dqe)
+
+%% Task 2
+clear
+
+% Given Variables
+L = 1024; % Saturation level
+eta = 0.5;
+q = [1:200:3001]; % Lambda/ Mean exposure
+q_scaled = q ./ eta;
+
+% DQE varying read noise
+noise_read = [1,3,10];
+noise_AD = 0;
+
+% Calculate DQE varying read noise and 0 AD noise
+dqe(1,:) = DQE(L, q, eta, noise_AD, noise_read(1));
+dqe(2,:) = DQE(L, q, eta, noise_AD, noise_read(2));
+dqe(3,:) = DQE(L, q, eta, noise_AD, noise_read(3));
+
+Plot2(q_scaled, dqe,["read noise = 1", "read noise = 3", "read noise = 10"])
+
+% DQE varying bit level
+noise_read = 0;
+AD = [2,4,8];
+noise_AD = NoiseAD(L, AD);
+
+% Calculate DQE varying AD noise and 0 read noise
+dqe(1,:) = DQE(L, q, eta, noise_AD(1), noise_read);
+dqe(2,:) = DQE(L, q, eta, noise_AD(2), noise_read);
+dqe(3,:) = DQE(L, q, eta, noise_AD(3), noise_read);
+
+Plot2(q_scaled, dqe,["AD noise = 2", "AD noise = 4", "AD noise = 8"])
+
+%% Task 3
+clear
+
+% Given Variables
+noise_read = 0;
+noise_AD = 0;
+
+
+q = [1:50:3001]; % Lambda/ Mean exposure
+L = 1024; % Saturation level
+l_norm = (1 - F1(L, q)); % count
+
+diameter = [20,10,5]; %Square Pixel diameter microns
+area = diameter.^2; %microns^2
+multiplier = area(1) ./ area;
+
+% Calculate E for each area
+E(1,:) = q;% ./ area(1);
+E(2,:) = multiplier(2) .* E(1,:);
+E(3,:) = multiplier(3) .* E(1,:);
+
+logE = log(E)./2;
+
+Plot3(logE, l_norm,["diameter = 20", "diameter = 10", "diameter = 5"])
+
+%% Task 4
+
+% Calculate variance for each area
+variance = Variance(L, q);
+variance = [variance; variance; variance];
+variance = variance ./ multiplier';
+
+Plot4_1(l_norm, variance,["diameter = 20", "diameter = 10", "diameter = 5"])
+Plot4_2(logE, variance,["diameter = 20", "diameter = 10", "diameter = 5"])
+
+%% Task 5
+
+% Calculate DQE for each area
+eta = 1;
+dqe = DQE(L, q, eta, noise_AD, noise_read);
+
+Plot5_1(logE, dqe, ["diameter = 20", "diameter = 10", "diameter = 5"])
+Plot5_2(logE, dqe, l_norm, ["diameter = 20", "diameter = 10", "diameter = 5"])
+
+%% Functions
+
+% AD noise
+function noise = NoiseAD(L, AD)
+    noise = (L.^2)./(12.*2.^(2.*AD));
+end
+
+% Compute f1 (eq 6)
+% Compute f2 (eq 9)
+% Compute f3 (eq 16)
+function f1 = F1(L,q)
+    f1 = 0;
+    for i = 0:L-1
+        f1 = f1 + (1/L) * poisscdf(i,q);
+    end
+end
+function f2 = F2(L,q)
+    f2 = (1/L) * poisscdf(L-1,q);
+end
+function f3 = F3(L,q)
+    f3 = 0;
+    for i = 0:L-1
+        f3 = f3 + ((1/(L*L)) * (2*i+1) * poisscdf(i,q));
+    end
+end
+
+% DQE
+function dqe = DQE(L, q, eta, noise_AD, noise_read)
+    f1 = F1(L,q);
+    f2 = F2(L,q);
+    f3 = F3(L,q);
+
+    % Calculate DQE(qN) (Eq 21)
+    DQE_qN = (q.*f2.*f2.*L.^2)./(noise_AD + noise_read^2 + L.^2 *((1.-f3)-(1.-f1).^2));
+    
+    % Calculate DQE(q) (Eq 24)
+    dqe = DQE_qN .* eta;
+end
+% Variance
+function sig = Variance(L, q)
+    f1 = F1(L,q);
+    f3 = F3(L,q);
+    sig = L^2 .* ((1-f3)-(1-f1).^2);
+end
+
+%% Plots
+function Plot1(q_scaled, dqe)
+    figure
+    hold on
+    plot(q_scaled(1,:), dqe(1,:), '-')
+    plot(q_scaled(2,:), dqe(2,:), 'REPLACE_WITH_DASH_DASH')
+    plot(q_scaled(3,:), dqe(3,:), '-.')
+    plot(q_scaled(4,:), dqe(4,:), ':k')
+    xlim([0 10000])
+    ylim([0 1.2])
+    legend('eta = 1', 'eta = 0.5','eta = 0.25','eta = 0.125')
+    title('DQE vs Mean # q')
+    ylabel('DQE')
+    xlabel('q, photons')
+    hold off
+end
+function Plot2(q_scaled, dqe, leg)
+    figure
+    hold on
+    plot(q_scaled, dqe(1,:), '-')
+    plot(q_scaled, dqe(2,:), 'REPLACE_WITH_DASH_DASH')
+    plot(q_scaled, dqe(3,:), ':k')
+    xlim([0 3000])
+    ylim([0 0.6])
+    legend(leg(1), leg(2), leg(3))
+    title('DQE vs Mean # q')
+    ylabel('DQE')
+    xlabel('q, photons')
+    hold off
+end
+function Plot3(q_scaled, LogE, leg)
+    figure
+    hold on
+    plot(q_scaled(1,:), LogE, '-')
+    plot(q_scaled(2,:), LogE, 'REPLACE_WITH_DASH_DASH')
+    plot(q_scaled(3,:), LogE, ':k')
+    xlim([0 5])
+    ylim([0 1])
+    legend({leg(1), leg(2), leg(3)},'Location','northwest')
+    title('normalized pix val vs log(mean # photons/400 microns^2')
+    ylabel('l, normalized')
+    xlabel('logE, photons/400 microns^2')
+    hold off
+end
+function Plot4_1(a, b, leg)
+    figure
+    hold on
+    plot(a, b(1,:), '-')
+    plot(a, b(2,:), 'REPLACE_WITH_DASH_DASH')
+    plot(a, b(3,:), ':k')
+    legend({leg(1), leg(2), leg(3)},'Location','northwest')
+    title('Variance vs normalized mean count level')
+    ylabel('Variance')
+    xlabel('normalized mean couint level')
+    hold off
+end
+function Plot4_2(a, b, leg)
+    figure
+    hold on
+    plot(a(1,:), b(1,:), '-')
+    plot(a(2,:), b(2,:), 'REPLACE_WITH_DASH_DASH')
+    plot(a(3,:), b(3,:), ':k')
+    legend({leg(1), leg(2), leg(3)},'Location','northwest')
+    title('Variance vs log(mean # photons/400 micron^2)')
+    ylabel('Variance')
+    xlabel('log E, photons/400 micron^2')
+    hold off
+end
+function Plot5_1(a, b, leg)
+    figure
+    hold on
+    plot(a(1,:), b, '-')
+    plot(a(2,:), b, 'REPLACE_WITH_DASH_DASH')
+    plot(a(3,:), b, ':k')
+    legend({leg(1), leg(2), leg(3)},'Location','southwest')
+    title('DQE vs log(mean # photons / 400 microns^2)')
+    ylabel('DQE')
+    xlabel('log E, photons/400 micron^2')
+    hold off
+end
+function Plot5_2(a, b, c, leg)
+    figure
+    hold on
+    yyaxis left
+    plot(a(1,:), b, '-')
+    ylim([0 2])
+    ylabel('DQE')
+    yyaxis right
+    ylabel('normalized count')
+    plot(a(1,:), c, ':')
+    ylim([0 1])
+    legend({leg(1)},'Location','northwest')
+    title('DQE and mean count vs logE')
+    xlabel('log E, photons/400 micron^2')
+    hold off
+end
+
+function Plot_extra()
+    figure
+    hold on
+    title('Mean pix val vs mean # photons')
+    ylabel('l')
+    xlabel('q, photons')
+    ylim([0 L])
+    xlim([0 1.5*L])
+    plot(q, L*(1-F1(L,q)))
+    hold off
+    xline(L, ':', {'L'});
+
+    figure
+    hold on
+    title('gain vs mean # photons')
+    ylabel('gain')
+    xlabel('q, photons')
+    plot(q, L*F2(L,q))
+    xlim([0 1.5*L])
+    hold off
+    xline(L, ':', {'L'});
+    yline(1);
+
+
+    figure
+    hold on
+    title('Variance vs mean # photons')
+    ylabel('variance')
+    xlabel('q, photons')
+    plot(q, Variance(L, F1(L,q), F3(L,q)))
+    ylim([0 L])
+    xlim([0 1.5*L])
+    hold off
+    xline(L, ':', {'L'});
+
+
+    figure
+    hold on
+    title('DQE vs mean # photons')
+    ylabel('DQE')
+    xlabel('q, photons')
+    plot(q, DQE(L, q, 1, noise_AD, noise_read))
+    xlim([0 1.5*L])
+    hold off
+    xline(L, ':', {'L'});
+    yline(1, ':', {'max dqe'});
+end
+
+##### SOURCE END #####
+--></body></html>
